@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        /* កំណត់ទម្រង់ទំព័រសម្រាប់ PDF */
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 11px;
+            color: #333;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        /* ផ្នែកខាងលើ (Header) */
+        .invoice-header {
+            margin-bottom: 40px;
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 20px;
+        }
+
+        .header-table {
+            width: 100%;
+            border: none;
+        }
+
+        .shop-info h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 26px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .invoice-title {
+            text-align: right;
+            vertical-align: bottom;
+        }
+
+        .invoice-title h2 {
+            color: #e74c3c;
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: 2px;
+        }
+
+        /* ព័ត៌មានអតិថិជន និងវិក្កយបត្រ */
+        .info-container {
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .info-box {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .info-box td {
+            border: none;
+            padding: 5px 0;
+            vertical-align: top;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #555;
+            width: 100px;
+        }
+
+        /* រចនាប័ទ្មតារាងទំនិញ */
+        table.items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table.items-table th {
+            background-color: #2c3e50;
+            color: white;
+            padding: 12px 10px;
+            text-align: left;
+            text-transform: uppercase;
+            font-size: 10px;
+        }
+
+        table.items-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* ប្តូរពណ៌ជួរដេកឆ្លាស់គ្នា */
+        table.items-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* ផ្នែកសរុបប្រាក់ */
+        .summary-container {
+            margin-top: 30px;
+            width: 100%;
+        }
+
+        .summary-table {
+            width: 50%;
+            margin-left: 50%;
+            border-collapse: collapse;
+        }
+
+        .summary-table td {
+            padding: 8px 10px;
+        }
+
+        .grand-total {
+            background-color: #2c3e50;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* ជើងក្រោម (Footer) */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            font-style: italic;
+            color: #777;
+        }
+
+        .status-paid {
+            color: #27ae60;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="invoice-header">
+        <table class="header-table">
+            <tr>
+                <td class="shop-info">
+                    <h1>PHNOM KULEN</h1>
+                    <p style="margin: 5px 0;">Retail Shop Management System<br>
+                    Phnom Penh, Cambodia<br>
+                    Tel: <strong>086 918 554</strong></p>
+                </td>
+                <td class="invoice-title">
+                    <h2>INVOICE</h2>
+                    <p>No: <strong>#{{ order.id }}</strong></p>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="info-container">
+        <table class="info-box">
+            <tr>
+                <td class="label">Date:</td>
+                <td>{{ order.created_at|date:"d-M-Y H:i" }}</td>
+                <td class="label" style="text-align: right;">Payment:</td>
+                <td style="text-align: right;"><strong>{{ order.payment_method|upper }}</strong></td>
+            </tr>
+            <tr>
+                <td class="label">Cashier:</td>
+                <td>{{ order.cashier.username }}</td>
+                <td class="label" style="text-align: right;">Status:</td>
+                <td style="text-align: right;" class="status-paid">PAID</td>
+            </tr>
+        </table>
+    </div>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width: 5%;">No.</th>
+                <th style="width: 50%;">Description</th>
+                <th style="text-align: center;">Qty</th>
+                <th style="text-align: right;">Unit Price</th>
+                <th style="text-align: right;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td><strong>{{ item.product.name }}</strong></td>
+                <td style="text-align: center;">{{ item.quantity }}</td>
+                <td style="text-align: right;">${{ item.unit_price }}</td>
+                <td style="text-align: right;">${{ item.subtotal }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary-container">
+        <table class="summary-table">
+            <tr>
+                <td><strong>Sub-Total :</strong></td>
+                <td style="text-align: right;">${{ subtotal_before_discount|floatformat:2 }}</td>
+            </tr>
+            
+            {% if order.discount %}
+            <tr>
+                <td style="color: #e74c3c;"><strong>Discount ( {{ discount_display }}):</strong></td>
+                <td style="text-align: right; color: #e74c3c;">-${{ discount_amount_calculated|floatformat:2 }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td>Discount:</td>
+                <td style="text-align: right;">$0.00</td>
+            </tr>
+            {% endif %}
+            
+            <tr class="grand-total">
+                <td><strong>GRAND TOTAL :</strong></td>
+                <td style="text-align: right;"><strong>${{ order.total_amount|floatformat:2 }}</strong></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p>Thank you for choosing PHNOM KULEN!</p>
+        <p style="font-size: 8px;">Generated by POS System on {{ "now"|date:"d-m-Y H:i" }}</p>
+    </div>
+
+</body>
+</html>

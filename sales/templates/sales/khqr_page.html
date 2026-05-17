@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <title>ទូទាត់ប្រាក់តាម KHQR</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { 
+            background-color: #f8f9fa; 
+            font-family: 'Khmer OS Battambang', sans-serif; 
+        }
+        .qr-card {
+            max-width: 450px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card qr-card shadow-sm border-0 text-center">
+        <h5 class="text-muted mb-2">ចំនួនទឹកប្រាក់ដែលត្រូវទូទាត់</h5>
+        <h1 class="fw-bold text-danger mb-4">${{ order.total_amount }}</h1>
+
+        <div class="my-4">
+            {% load static %}
+            <img src="{% static 'my_khqr.jpg' %}" alt="ABA KHQR" class="img-fluid rounded-4 shadow-sm" style="max-width: 280px; border: 1px solid #eee;">
+        </div>
+
+        <p class="fw-bold text-secondary mt-3">សូមបើក App ធនាគារណាមួយដើម្បីស្កែនទូទាត់</p>
+        <p class="small text-muted">វិក្កយបត្រ #{{ order.pk }}</p>
+
+        <hr>
+
+        <div class="d-grid gap-2">
+            <a href="{% url 'add_item' order.pk %}" class="btn btn-primary btn-lg fw-bold">← ត្រឡប់ទៅកាន់ការលក់វិញ</a>
+            <a href="{% url 'order_list' %}" class="btn btn-light text-muted">ទៅកាន់បញ្ជីវិក្កយបត្រ</a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

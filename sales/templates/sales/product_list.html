@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛒 POS — បញ្ជីផលិតផលតាមក្រុម</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <style>
+        body { background: #fff5f5; font-family: 'Arial', sans-serif; }
+        .nav-container { background: rgb(233, 239, 243); padding: 15px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        
+        .category-header {
+            background-color: #ffffff;
+            border-left: 6px solid #007bff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .product-card { 
+            transition: all 0.3s ease; 
+            border: none; 
+            height: 100%; 
+            display: flex;
+            flex-direction: column;
+            border-radius: 15px; 
+            overflow: hidden; 
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.1); 
+            background: #ffffff;
+        }
+
+        .product-card:hover { 
+            transform: translateY(-8px); 
+            box-shadow: 0 12px 24px rgba(0, 123, 255, 0.2) !important; 
+        }
+        
+        .img-container {
+            height: 180px;
+            overflow: hidden;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .product-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; 
+            padding: 10px;
+        }
+
+        .price { font-size: 1.4em; font-weight: bold; color: #276749; }
+        .low-stock { color: #c53030; font-weight: bold; font-size: 0.85em; }
+        
+        /* កែប្រែអក្សរអង់គ្លេសឱ្យដិត និង Nav Links */
+        nav a { 
+            margin-right: 20px; 
+            text-decoration: none; 
+            color: #2b6cb0; 
+            font-weight: 700; 
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        nav a:hover { text-decoration: none; color: #004a99; transform: scale(1.05); }
+        
+        /* ពណ៌ Icon នីមួយៗឱ្យខុសគ្នាដើម្បីងាយចំណាំ */
+        .icon-product { color: #f07f3e; } /* ពណ៌ទឹកក្រូច */
+        .icon-order { color: #27ae60; }   /* ពណ៌បៃតង */
+        .icon-new { color: #2980b9; }     /* ពណ៌ខៀវ */
+        .icon-admin { color: #61d1d1; }   /* ពណ៌ស្វាយ */
+
+        .card-title {
+            height: 2.4em; 
+            line-height: 1.2em;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical;
+            margin-bottom: 8px;
+        }
+
+        .btn-outline-primary, .btn-primary { border-radius: 10px; }
+
+        /* បន្ថែមស្ទីលឱ្យ User Info (Mrrin) */
+        .user-box {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            color: #2c3e50;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .user-box i { color: #007bff; font-size: 1.2rem; }
+        
+        .btn-logout { font-weight: 700; border-radius: 20px; padding: 5px 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="nav-container">
+        <div class="container d-flex justify-content-between align-items-center">
+            <nav>
+                <a href="{% url 'product_list' %}"><i class="fa-solid fa-tags icon-product"></i> Products</a>
+                <a href="{% url 'order_list' %}"><i class="fa-solid fa-file-invoice icon-order"></i> Orders</a>
+                <a href="{% url 'create_order' %}"><i class="fa-solid fa-cart-plus icon-new"></i> New Order</a>
+                <a href="/admin/"><i class="fa-solid fa-gears icon-admin"></i> Admin</a>
+            </nav>
+            <div class="user-info text-end d-flex align-items-center gap-3">
+                <div class="user-box d-none d-md-flex align-items-center gap-2">
+                    <i class="fa-solid fa-user-circle"></i>
+                    <span>{{ request.user.username }}</span>
+                </div>
+                <form method="post" action="/accounts/logout/" style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm btn-logout">
+                        <i class="fa-solid fa-power-off"></i> Log Out
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <h2 class="fw-bold text-dark">🛍️ បញ្ជីផលិតផលសរុប</h2>
+            <a href="{% url 'create_order' %}" class="btn btn-primary shadow-sm px-4">
+                <i class="fa-solid fa-plus-circle"></i> បង្កើតការលក់ថ្មី
+            </a>
+        </div>
+
+        {% for category in categories %}
+        <div class="category-block mb-5">
+            <div class="category-header">
+                <h4 class="m-0 fw-bold text-primary text-uppercase">{{ category.name }}</h4>
+                <span class="badge bg-primary rounded-pill">{{ category.products.count }} មុខ</span>
+            </div>
+            
+            <div class="row">
+                {% for product in category.products.all %}
+                <div class="col-md-3 mb-4">
+                    <div class="card product-card">
+                        <div class="img-container">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" class="product-img" alt="{{ product.name }}">
+                            {% else %}
+                                <div class="h-100 d-flex align-items-center justify-content-center text-muted">
+                                    <i class="fa-regular fa-image fa-2x"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-body d-flex flex-column p-3">
+                            <div class="mb-2">
+                                <span class="badge bg-light text-primary border border-primary-subtle" style="font-size: 0.7em;">{{ category.name }}</span>
+                            </div>
+                            <h5 class="card-title fw-bold text-dark">{{ product.name }}</h5>
+                            <p class="price mb-2">${{ product.price }}</p>
+                            
+                            <div class="mt-auto">
+                                {% if product.stock <= 5 %}
+                                    <p class="low-stock mb-2">⚠️ ស្តុកទាប: {{ product.stock }}</p>
+                                {% else %}
+                                    <p class="text-muted mb-2" style="font-size: 0.85em;">ក្នុងស្តុក: {{ product.stock }}</p>
+                                {% endif %}
+                                
+                                <div class="d-grid">
+                                    <a href="{% url 'product_detail' product.pk %}" class="btn btn-outline-primary btn-sm fw-bold">មើលលម្អិត</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-3">
+                    <p class="text-muted italic">មិនទាន់មានផលិតផលក្នុងក្រុមនេះទេ</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if not categories %}
+        <div class="col-12 text-center py-5">
+            <p class="text-muted fs-4">មិនទាន់មានប្រភេទក្រុម (Category) នៅឡើយទេ</p>
+            <a href="/admin/" class="btn btn-secondary mt-2">ទៅកាន់ Admin ដើម្បីបន្ថែម</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS - វិក្កយបត្រ #{{ order.pk }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { 
+            background-color: #fff5f5; 
+            font-family: 'Khmer OS Battambang', sans-serif; 
+        }
+        .product-card { 
+            cursor: pointer; 
+            transition: 0.3s; 
+            border: none; 
+            border-radius: 12px;
+            background: white;
+            overflow: hidden;
+        }
+        /* បន្ថែម Style សម្រាប់កាតណាដែលអស់ស្តុកឱ្យមើលទៅស្រអាប់បន្តិចងាយសម្គាល់ */
+        .product-card.out-of-stock {
+            opacity: 0.65;
+        }
+        .product-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 20px rgba(220, 53, 69, 0.1) !important; 
+        }
+        .img-wrapper {
+            width: 100%;
+            height: 140px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            border-bottom: 1px solid #f8eaea;
+        }
+        .product-img-display {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .scroll-area { 
+            height: calc(100vh - 160px); 
+            overflow-y: auto; 
+            padding-right: 10px;
+        }
+        .order-summary {
+            background: white;
+            border-radius: 15px;
+            height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.08);
+        }
+        .order-items { flex-grow: 1; overflow-y: auto; }
+        #id_product { display: none; } 
+    </style>
+</head>
+<body>
+
+<div class="container-fluid py-4">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show mb-3" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-7 col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold text-dark"><i class="bi bi-grid-3x3-gap"></i> បញ្ជីទំនិញ</h4>
+                <div class="text-muted small">
+                    អ្នកលក់៖ <strong>{{ order.cashier }}</strong> | ស្ថានភាព៖ <span class="badge bg-info">{{ order.get_status_display }}</span>
+                </div>
+            </div>
+            
+            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 scroll-area">
+                {% for prod in products %}
+                <div class="col">
+                    <div class="card h-100 product-card shadow-sm {% if prod.stock <= 0 %}out-of-stock{% endif %}" 
+                         onclick="addToOrder('{{ prod.id }}', {{ prod.stock }}, '{{ prod.name|escapejs }}')">
+                        <div class="img-wrapper">
+                            {% if prod.image %}
+                                <img src="{{ prod.image.url }}" class="product-img-display" alt="{{ prod.name }}">
+                            {% else %}
+                                <div class="text-muted text-center">
+                                    <i class="bi bi-image fs-2"></i><br>
+                                    <small class="d-block">គ្មានរូបភាព</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-body p-2 text-center">
+                            <h6 class="fw-bold small mb-1 text-truncate" title="{{ prod.name }}">{{ prod.name }}</h6>
+                            <p class="text-primary fw-bold mb-0">${{ prod.price }}</p>
+                            
+                            {% if prod.stock > 0 %}
+                                <small class="text-muted">ស្តុក: {{ prod.stock }}</small>
+                            {% else %}
+                                <small class="text-danger fw-bold">អស់ស្តុក (0)</small>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer p-1 bg-transparent border-0 px-2 pb-2">
+                             {% if prod.stock > 0 %}
+                                 <button class="btn btn-outline-primary btn-sm w-100">បន្ថែម</button>
+                             {% else %}
+                                 <button class="btn btn-secondary btn-sm w-100" disabled>អស់ស្តុក</button>
+                             {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-md-5 col-lg-4">
+            <div class="order-summary p-3">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
+                    <h5 class="fw-bold mb-0">🛒 វិក្កយបត្រ #{{ order.pk }}</h5>
+                    <a href="{% url 'order_list' %}" class="btn btn-sm btn-light text-muted">ត្រឡប់ក្រោយ</a>
+                </div>
+                
+                <div class="order-items mt-2">
+                    <table class="table table-hover align-middle">
+                        <thead class="small text-muted table-light">
+                            <tr>
+                                <th>មុខទំនិញ</th>
+                                <th class="text-center">ចំនួន</th>
+                                <th class="text-end">តម្លៃ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold small text-truncate" style="max-width: 120px;">{{ item.product.name }}</div>
+                                    <small class="text-muted">${{ item.unit_price }}</small>
+                                </td>
+                                <td class="text-center">{{ item.quantity }}</td>
+                                <td class="text-end fw-bold">${{ item.subtotal }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-5 text-muted">
+                                    <i class="bi bi-cart-x fs-1"></i><br>មិនទាន់មានទំនិញ
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="border-top pt-3">
+                    <div class="d-flex justify-content-between h5 fw-bold mb-3">
+                        <span>សរុបរួម៖</span>
+                        <span class="text-success">${{ order.total_amount }}</span>
+                    </div>
+
+                    <div class="card pos-card mb-3 shadow-sm border-0 bg-light">
+                        <div class="card-body p-3">
+                            <h6 class="fw-bold mb-2 small"><i class="bi bi-tag"></i> បញ្ចុះតម្លៃ (Discount)</h6>
+                            <form method="post" class="row g-2">
+                                {% csrf_token %}
+                                <div class="col-5">
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" step="0.01" name="discount_amount" class="form-control" placeholder="ចំនួន" required>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <select name="discount_type" class="form-select form-select-sm">
+                                        <option value="fixed">$</option>
+                                        <option value="percent">%</option>
+                                    </select>
+                                </div>
+                                <div class="col-3">
+                                    <button type="submit" name="apply_discount" class="btn btn-warning btn-sm w-100 fw-bold">ចុះ</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <form method="post" id="pos-form" class="d-none">
+                        {% csrf_token %}
+                        {{ item_form.product }}
+                        <input type="number" name="quantity" id="id_quantity" value="1">
+                    </form>
+
+                    {% if order.status == 'open' %}
+                        <div class="mb-2">
+                            <a href="{% url 'show_khqr' order.id %}" target="_blank" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
+                                <i class="fas fa-qrcode"></i> បង្ហាញ KHQR សម្រាប់ Scan
+                            </a>
+                        </div>
+
+                        <form method="post" class="mb-2">
+                            {% csrf_token %}
+                            <button type="submit" name="mark_paid" class="btn btn-success w-100 btn-lg py-2 fw-bold shadow-sm">
+                                <i class="bi bi-cash-stack"></i> បង់ប្រាក់រួចរាល់
+                            </button>
+                        </form>
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            <button type="submit" name="cancel_order" class="btn btn-outline-danger w-100 btn-sm py-2" 
+                                    onclick="return confirm('តើអ្នកពិតជាចង់បោះបង់ការលក់នេះមែនទេ?')">
+                                <i class="bi bi-x-circle"></i> បោះបង់ការបញ្ជាទិញ
+                            </button>
+                        </form>
+                    {% elif order.status == 'paid' %}
+                        <div class="alert alert-success text-center shadow-sm mb-2">
+                            <h6 class="mb-1 fw-bold">បង់ប្រាក់រួចរាល់</h6>
+                        </div>
+                        <a href="{% url 'export_pdf' order.id %}" target="_blank" class="btn btn-info w-100 py-2 fw-bold text-white shadow-sm">
+                            <i class="fas fa-file-pdf"></i> បោះពុម្ពវិក្កយបត្រ (PDF)
+                        </a>
+                    {% else %}
+                        <div class="alert alert-secondary text-center shadow-sm">
+                            <h6 class="mb-1 fw-bold">វិក្កយបត្រនេះត្រូវបានបិទ</h6>
+                            <small>({{ order.get_status_display }})</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // បន្ថែម stock និង productName ទៅក្នុង Parameter ដើម្បីឆែកលក្ខខណ្ឌ
+    function addToOrder(productId, stock, productName) {
+        // ១. ពិនិត្យមើលស្តុកសិន បើស្មើ ឬតូចជាង ០ គឺលោត Alert ឃាត់ភ្លាម
+        if (stock <= 0) {
+            alert("🚨 មិនអាចលក់បានទេ! ទំនិញ [" + productName + "] នេះអស់ពីស្តុកហើយ។");
+            return; // បញ្ឈប់ការលក់ត្រឹមនេះ មិនឱ្យទៅដណ្តើមទិន្នន័យ Server ទេ
+        }
+
+        // ២. បើមានស្តុកធម្មតា ទើបដំណើរការ Submit Form ទៅកាន់ Server
+        const productInput = document.querySelector('#id_product');
+        const quantityInput = document.querySelector('#id_quantity');
+        if(productInput && quantityInput) {
+            productInput.value = productId;
+            quantityInput.value = 1;
+            document.getElementById('pos-form').submit();
+        }
+    }
+</script>
+</body>
+</html>

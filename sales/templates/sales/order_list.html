@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧾 POS — របាយការណ៍លក់</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@100..700&display=swap');
+        
+        body { 
+            background-color: #f4f7f6; 
+            font-family: 'Kantumruy Pro', sans-serif; 
+        }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .table thead { background-color: #2d3748; color: white; }
+        .status-paid { color: #2f855a; font-weight: 600; background: #c6f6d5; padding: 5px 12px; border-radius: 30px; font-size: 0.85em; }
+        .status-open { color: #c05621; font-weight: 600; background: #feebc8; padding: 5px 12px; border-radius: 30px; font-size: 0.85em; }
+        .status-cancelled { color: #718096; background: #edf2f7; padding: 5px 12px; border-radius: 30px; font-size: 0.85em; text-decoration: line-through; }
+        .order-link { color: #3182ce; text-decoration: none; font-weight: 700; }
+        .navbar { background: white !important; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .revenue-card { 
+            background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%); 
+            color: white; 
+        }
+        .btn-khqr { background-color: #ffffff; color: #1a73e8; border: 1px solid #1a73e8; }
+        .btn-khqr:hover { background-color: #1a73e8; color: white; }
+        .btn-pdf { background-color: #ffffff; color: #dc3545; border: 1px solid #dc3545; }
+        .btn-pdf:hover { background-color: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light sticky-top mb-4">
+    <div class="container">
+        <a class="navbar-brand fw-bold text-primary" href="#">
+            <i class="bi bi-shop-window me-2"></i> POS SYSTEM
+        </a>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="navbar-nav me-auto">
+                <a class="nav-link" href="{% url 'product_list' %}"><i class="bi bi-box-seam me-1"></i> ទំនិញ</a>
+                <a class="nav-link active fw-bold" href="{% url 'order_list' %}"><i class="bi bi-card-list me-1"></i> វិក្កយបត្រ</a>
+                <a class="nav-link text-success fw-bold" href="{% url 'create_order' %}"><i class="bi bi-plus-circle-fill me-1"></i> លក់ថ្មី</a>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle btn-sm border" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle me-1"></i> {{ request.user.username }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                        <li><a class="dropdown-item small" href="/admin/"><i class="bi bi-gear me-2"></i> កាន់ Admin</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form method="post" action="/accounts/logout/" class="px-3">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger w-100">ចាកចេញ</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container pb-5">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show border-0 shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row align-items-end mb-4">
+        <div class="col-md-8">
+            <h2 class="fw-bold text-dark mb-1">
+                {% if request.resolver_match.url_name == 'my_orders' %}
+                    <i class="bi bi-person-badge text-primary me-2"></i>ការលក់របស់ខ្ញុំ
+                {% else %}
+                    <i class="bi bi-journal-text text-primary me-2"></i>របាយការណ៍លក់ទាំងអស់
+                {% endif %}
+            </h2>
+            <p class="text-muted">សរុបមានចំនួន <span class="fw-bold text-dark">{{ orders.count }}</span> ប្រតិបត្តិការ</p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <div class="btn-group shadow-sm bg-white p-1 rounded-pill">
+                <a href="{% url 'order_list' %}" class="btn rounded-pill px-4 {% if request.resolver_match.url_name == 'order_list' %}btn-primary{% else %}btn-white text-muted{% endif %}">ទាំងអស់</a>
+                <a href="{% url 'my_orders' %}" class="btn rounded-pill px-4 {% if request.resolver_match.url_name == 'my_orders' %}btn-primary{% else %}btn-white text-muted{% endif %}">របស់ខ្ញុំ</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card revenue-card p-4 shadow-sm border-0">
+                <h6 class="text-uppercase small fw-bold opacity-75 mb-1">ចំណូលសរុប (បង់រួច)</h6>
+                <h2 class="mb-0 fw-bold">${{ total_revenue|default:"0.00" }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4 py-3">លេខវិក្កយបត្រ</th>
+                        <th>អ្នកគិតលុយ</th>
+                        <th>ស្ថានភាព</th>
+                        <th>តម្លៃសរុប</th>
+                        <th class="text-center">សកម្មភាព</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td class="ps-4">
+                            <a href="{% url 'add_item' order.pk %}" class="order-link">
+                                #INV-{{ order.pk|stringformat:"04d" }}
+                            </a>
+                            <div class="text-muted small">{{ order.created_at|date:"d/m/Y H:i" }}</div>
+                        </td>
+                        <td><span class="small fw-bold">{{ order.cashier.username }}</span></td>
+                        <td>
+                            {% if order.status == 'paid' %}
+                                <span class="status-paid">បានបង់</span>
+                            {% elif order.status == 'open' %}
+                                <span class="status-open">កំពុងបើក</span>
+                            {% else %}
+                                <span class="status-cancelled">បោះបង់</span>
+                            {% endif %}
+                        </td>
+                        <td><div class="fw-bold text-dark">${{ order.total_amount|default:"0.00" }}</div></td>
+                        <td class="text-center">
+                            <div class="btn-group">
+                                <a href="{% url 'add_item' order.pk %}" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-2">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'show_khqr' order.id %}" target="_blank" class="btn btn-sm btn-khqr rounded-pill px-3 me-2">
+                                    <i class="bi bi-qr-code"></i> KHQR
+                                </a>
+                                <a href="{% url 'export_pdf' order.id %}" class="btn btn-sm btn-pdf rounded-pill px-3">
+                                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="text-center py-5 text-muted">មិនទាន់មានទិន្នន័យឡើយ។</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
