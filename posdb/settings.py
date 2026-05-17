@@ -81,13 +81,23 @@ USE_TZ = True
 
 # --- ការកំណត់ Static Files (CSS, JavaScript, Images, Fonts) ---
 STATIC_URL = 'static/'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# ប្ដូរមកប្រើទម្រង់ STORAGES ថ្មីនេះវិញ ដើម្បីកុំឱ្យ Render ចាប់កំហុសពេល Build
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 # ប្រាប់ Django ឱ្យរកមើល File ក្នុង Folder static ធំនៃ Project
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
-# ទីតាំងសម្រាប់ប្រមូលផ្តុំ Static ពេល Deploy (ដោះស្រាយ Error NoneType មិញ)
+# ទីតាំងសម្រាប់ប្រមូលផ្តុំ Static ពេល Deploy
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # --- ការកំណត់ Media Files (រូបភាពផលិតផល) ---
