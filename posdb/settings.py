@@ -29,6 +29,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # <-- បងបានថែមជួរនេះនៅទីនេះ
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -80,7 +81,7 @@ USE_TZ = True
 
 # --- ការកំណត់ Static Files (CSS, JavaScript, Images, Fonts) ---
 STATIC_URL = 'static/'
-
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # ប្រាប់ Django ឱ្យរកមើល File ក្នុង Folder static ធំនៃ Project
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
